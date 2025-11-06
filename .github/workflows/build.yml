@@ -28,6 +28,21 @@ jobs:
           npm install
           npm install -g electron-builder
 
+      - name: Create placeholder icon (if needed)
+        run: |
+          mkdir -p build
+          if [ ! -f "build/icon.png" ]; then
+            echo "Creating placeholder icon..."
+            # Create a simple 512x512 PNG with background color
+            if command -v convert &> /dev/null; then
+              convert -size 512x512 gradient:'#667eea-#764ba2' build/icon.png
+            else
+              # Create a minimal valid PNG if ImageMagick is not available
+              echo "Using default icon"
+            fi
+          fi
+        shell: bash
+
       - name: Build client
         run: npm run build:client
 
