@@ -1,6 +1,6 @@
 {
   "name": "ben-comet-financial-monitor",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Financial products price monitoring system with alerts and probability analysis",
   "main": "electron/main.js",
   "private": true,
