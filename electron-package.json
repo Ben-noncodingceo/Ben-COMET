@@ -1,25 +1,19 @@
 {
-  "name": "ben-comet-financial-monitor",
+  "name": "ben-comet-desktop",
   "version": "1.0.0",
-  "description": "Financial products price monitoring system with alerts and probability analysis",
+  "description": "Desktop application for Ben-COMET Financial Monitor",
   "main": "electron/main.js",
-  "private": true,
-  "workspaces": [
-    "client",
-    "server"
-  ],
   "scripts": {
-    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
-    "dev:server": "npm run dev --workspace=server",
+    "dev": "concurrently \"npm run dev:client\" \"npm run dev:electron\"",
     "dev:client": "npm run dev --workspace=client",
-    "dev:electron": "concurrently \"npm run dev:client\" \"wait-on http://localhost:3000 && cross-env NODE_ENV=development electron .\"",
-    "build": "npm run build --workspaces",
+    "dev:electron": "wait-on http://localhost:3000 && cross-env NODE_ENV=development electron .",
+    "build": "npm run build:client && npm run build:server && npm run build:electron",
     "build:client": "npm run build --workspace=client",
     "build:server": "npm run build --workspace=server",
     "build:electron": "electron-builder --mac",
-    "build:all": "npm run build && electron-builder -mwl",
-    "dist:mac": "npm run build && npm run build:electron",
-    "start": "npm run start --workspace=server",
+    "build:all": "electron-builder -mwl",
+    "dist": "npm run build && npm run build:electron",
+    "pack": "electron-builder --dir",
     "postinstall": "electron-builder install-app-deps"
   },
   "build": {
@@ -35,8 +29,7 @@
       "client/dist/**/*",
       "server/dist/**/*",
       "server/node_modules/**/*",
-      "!server/src/**/*",
-      "!client/src/**/*"
+      "!server/src/**/*"
     ],
     "mac": {
       "target": [
@@ -78,14 +71,14 @@
       "icon": "build/icon.png"
     }
   },
-  "devDependencies": {
-    "concurrently": "^8.2.2",
-    "electron": "^28.0.0",
-    "electron-builder": "^24.9.1",
-    "wait-on": "^7.2.0",
-    "cross-env": "^7.0.3"
-  },
   "dependencies": {
     "electron-squirrel-startup": "^1.0.0"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1",
+    "concurrently": "^8.2.2",
+    "wait-on": "^7.2.0",
+    "cross-env": "^7.0.3"
   }
 }

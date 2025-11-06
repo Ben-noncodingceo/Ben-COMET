@@ -2,6 +2,19 @@
 
 一个强大的金融产品价格监控系统，支持股票、ETF和数字货币的实时监控、价格预警和概率分析。
 
+## 📥 下载桌面应用
+
+**最新版本**: [点击下载](https://github.com/Ben-noncodingceo/Ben-COMET/releases/latest)
+
+支持平台：
+- 🍎 **macOS** (Intel & Apple Silicon) - [下载 DMG](https://github.com/Ben-noncodingceo/Ben-COMET/releases/latest)
+- 🪟 **Windows** (64-bit) - [下载安装包](https://github.com/Ben-noncodingceo/Ben-COMET/releases/latest)
+- 🐧 **Linux** (AppImage, deb) - [下载](https://github.com/Ben-noncodingceo/Ben-COMET/releases/latest)
+
+详细安装说明请查看 [DOWNLOAD.md](DOWNLOAD.md)
+
+---
+
 ## 功能特性
 
 ### 核心功能
@@ -36,25 +49,43 @@
 - **Alpha Vantage API** - 股票和ETF数据
 - **CoinGecko API** - 加密货币数据
 
+### 桌面应用
+- **Electron** - 跨平台桌面应用框架
+- **内置服务器** - 无需单独安装数据库和后端
+- **自动更新** - 应用内自动检查更新
+
 ## 快速开始
 
-### 前置要求
+### 选项 1：使用桌面应用（推荐）
+
+1. 从 [Releases 页面](https://github.com/Ben-noncodingceo/Ben-COMET/releases/latest) 下载对应平台的安装包
+2. 安装并启动应用
+3. 配置 API 密钥和邮件设置
+4. 开始使用！
+
+详细安装说明：[DOWNLOAD.md](DOWNLOAD.md)
+
+### 选项 2：从源码运行（开发者）
+
+**前置要求：**
 - Node.js 18+
-- PostgreSQL 15+
+- PostgreSQL 15+ (可选 - 使用 Docker)
 - npm 或 yarn
 
-### 1. 克隆项目
+**步骤：**
+
+#### 1. 克隆项目
 ```bash
 git clone https://github.com/Ben-noncodingceo/Ben-COMET.git
 cd Ben-COMET
 ```
 
-### 2. 安装依赖
+#### 2. 安装依赖
 ```bash
 npm install
 ```
 
-### 3. 启动数据库
+#### 3. 启动数据库
 使用 Docker Compose:
 ```bash
 docker-compose up -d
@@ -66,7 +97,7 @@ createdb financial_monitor
 psql financial_monitor < server/src/database/schema.sql
 ```
 
-### 4. 配置环境变量
+#### 4. 配置环境变量
 复制并配置服务器环境变量:
 ```bash
 cp server/.env.example server/.env
@@ -92,7 +123,7 @@ EMAIL_FROM=Financial Monitor <your_email@gmail.com>
 ALPHA_VANTAGE_API_KEY=your_key_here
 ```
 
-### 5. 启动应用
+#### 5. 启动应用
 开发模式（同时启动前后端）:
 ```bash
 npm run dev
@@ -107,7 +138,7 @@ npm run dev:server
 npm run dev:client
 ```
 
-### 6. 访问应用
+#### 6. 访问应用
 - **前端**: http://localhost:3000
 - **后端API**: http://localhost:3001
 - **API文档**: http://localhost:3001/
@@ -340,7 +371,49 @@ Ben-COMET/
 └── README.md               # 项目文档
 ```
 
-## 生产部署
+## 构建桌面应用
+
+### macOS
+
+```bash
+# 构建 DMG 安装包（支持 Intel 和 Apple Silicon）
+npm run build:client
+npm run build:server
+npm run build:electron
+
+# 或使用快捷脚本
+chmod +x scripts/build-mac.sh
+./scripts/build-mac.sh
+
+# DMG 文件将生成在 dist/ 目录
+```
+
+### Windows
+
+```bash
+# 构建 Windows 安装包
+npm run build:client
+npm run build:server
+electron-builder --win
+```
+
+### Linux
+
+```bash
+# 构建 AppImage 和 deb 包
+npm run build:client
+npm run build:server
+electron-builder --linux
+```
+
+### 构建所有平台
+
+```bash
+# 一次性构建所有平台（需要在对应系统上运行）
+npm run build:all
+```
+
+## 生产部署（Web 版）
 
 ### 1. 构建项目
 ```bash
