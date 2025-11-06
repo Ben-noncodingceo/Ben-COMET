@@ -1,6 +1,6 @@
 {
   "name": "ben-comet-financial-monitor",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Financial products price monitoring system with alerts and probability analysis",
   "main": "electron/main.js",
   "private": true,
@@ -35,8 +35,21 @@
       "client/dist/**/*",
       "server/dist/**/*",
       "server/node_modules/**/*",
+      "package.json",
       "!server/src/**/*",
-      "!client/src/**/*"
+      "!client/src/**/*",
+      "!**/*.ts",
+      "!**/*.map"
+    ],
+    "extraResources": [
+      {
+        "from": "server/dist",
+        "to": "app/server/dist"
+      },
+      {
+        "from": "client/dist",
+        "to": "app/client/dist"
+      }
     ],
     "mac": {
       "target": [
@@ -46,11 +59,9 @@
         }
       ],
       "category": "public.app-category.finance",
-      "icon": "build/icon.icns",
-      "hardenedRuntime": true,
-      "gatekeeperAssess": false,
-      "entitlements": "build/entitlements.mac.plist",
-      "entitlementsInherit": "build/entitlements.mac.plist"
+      "type": "distribution",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false
     },
     "dmg": {
       "contents": [
@@ -66,16 +77,18 @@
         }
       ],
       "title": "Ben-COMET Financial Monitor",
-      "backgroundColor": "#667eea"
+      "backgroundColor": "#667eea",
+      "window": {
+        "width": 540,
+        "height": 380
+      }
     },
     "win": {
-      "target": ["nsis"],
-      "icon": "build/icon.ico"
+      "target": ["nsis"]
     },
     "linux": {
       "target": ["AppImage", "deb"],
-      "category": "Finance",
-      "icon": "build/icon.png"
+      "category": "Finance"
     }
   },
   "devDependencies": {
