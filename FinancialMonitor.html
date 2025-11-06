@@ -597,10 +597,20 @@
             switchTab('monitor');
             document.querySelectorAll('.tab')[0].click();
 
-            // Reload assets
-            loadAssets();
+            // Show loading message
+            showNotification('资产添加成功！正在获取历史数据...', 'success');
 
-            showNotification('资产添加成功！', 'success');
+            // Fetch historical data in background
+            fetchAndStoreHistoricalData(asset).then(success => {
+                if (success) {
+                    showNotification('历史数据加载完成，概率已更新！', 'success');
+                }
+                // Reload assets to show updated probability
+                loadAssets();
+            });
+
+            // Reload assets immediately (will show 0% until history loads)
+            loadAssets();
         }
 
         async function loadAssets() {
@@ -615,6 +625,23 @@
 
             const assetCards = await Promise.all(assets.map(async (asset) => {
                 const price = await fetchPrice(asset);
+
+                // Store current price in history
+                if (!priceHistory[asset.id]) {
+                    priceHistory[asset.id] = [];
+                }
+                if (price.price > 0) {
+                    priceHistory[asset.id].push({
+                        price: price.price,
+                        timestamp: new Date().toISOString()
+                    });
+                    // Keep only last 180 data points
+                    if (priceHistory[asset.id].length > 180) {
+                        priceHistory[asset.id] = priceHistory[asset.id].slice(-180);
+                    }
+                    savePriceHistory();
+                }
+
                 const probability = calculateProbability(asset, price);
                 return createAssetCard(asset, price, probability);
             }));
@@ -682,6 +709,80 @@
             }
 
             return { price: 0, change: 0, changePercent: 0, error: true };
+        }
+
+        // Fetch historical price data for stocks/ETFs
+        async function fetchStockHistoricalData(symbol, days = 60) {
+            const apiKey = localStorage.getItem('alphaVantageKey') || 'demo';
+            const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&apikey=${apiKey}&outputsize=compact`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data['Time Series (Daily)']) {
+                    const timeSeries = data['Time Series (Daily)'];
+                    const dates = Object.keys(timeSeries).slice(0, days).reverse();
+
+                    return dates.map(date => ({
+                        price: parseFloat(timeSeries[date]['4. close']),
+                        timestamp: new Date(date).toISOString()
+                    }));
+                }
+            } catch (error) {
+                console.error(`Error fetching historical data for ${symbol}:`, error);
+            }
+
+            return [];
+        }
+
+        // Fetch historical price data for crypto
+        async function fetchCryptoHistoricalData(symbol, days = 60) {
+            const cryptoMap = {
+                'BTC': 'bitcoin',
+                'ETH': 'ethereum',
+                'ADA': 'cardano',
+                'DOT': 'polkadot',
+                'DOGE': 'dogecoin'
+            };
+
+            const coinId = cryptoMap[symbol] || symbol.toLowerCase();
+            const url = `${COINGECKO_BASE_URL}/coins/${coinId}/market_chart?vs_currency=usd&days=${days}&interval=daily`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.prices) {
+                    return data.prices.map(([timestamp, price]) => ({
+                        price: price,
+                        timestamp: new Date(timestamp).toISOString()
+                    }));
+                }
+            } catch (error) {
+                console.error(`Error fetching historical data for ${symbol}:`, error);
+            }
+
+            return [];
+        }
+
+        // Fetch and store historical data for an asset
+        async function fetchAndStoreHistoricalData(asset) {
+            let historicalData = [];
+
+            if (asset.type === 'crypto') {
+                historicalData = await fetchCryptoHistoricalData(asset.symbol);
+            } else {
+                historicalData = await fetchStockHistoricalData(asset.symbol);
+            }
+
+            if (historicalData.length > 0) {
+                priceHistory[asset.id] = historicalData;
+                savePriceHistory();
+                return true;
+            }
+
+            return false;
         }
 
         function calculateProbability(asset, currentPrice) {
@@ -755,17 +856,27 @@
                     ${!priceData.error ? `
                         <div class="probability-section">
                             <div class="probability-label">6个月涨30%以上概率</div>
-                            <div class="probability-value ${probClass}">
-                                ${(probability.probability * 100).toFixed(1)}%
-                            </div>
-                            <div style="font-size: 0.85em; color: #6b7280; margin-top: 5px;">
-                                年化波动率: ${(probability.volatility * 100).toFixed(1)}%
-                            </div>
+                            ${probability.probability > 0 ? `
+                                <div class="probability-value ${probClass}">
+                                    ${(probability.probability * 100).toFixed(1)}%
+                                </div>
+                                <div style="font-size: 0.85em; color: #6b7280; margin-top: 5px;">
+                                    年化波动率: ${(probability.volatility * 100).toFixed(1)}%
+                                </div>
+                            ` : `
+                                <div style="color: #9ca3af; font-size: 0.9em; margin-top: 10px;">
+                                    ⏳ 需要历史数据才能计算概率
+                                    <br>点击下方"获取历史"按钮
+                                </div>
+                            `}
                         </div>
                     ` : ''}
 
-                    <div style="margin-top: 15px; display: flex; gap: 10px;">
+                    <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
                         <button onclick="refreshAsset('${asset.id}')" class="button button-secondary">刷新</button>
+                        ${probability.probability === 0 ? `
+                            <button onclick="loadHistoricalData('${asset.id}')" class="button button-primary">获取历史</button>
+                        ` : ''}
                         <button onclick="openAlertModal('${asset.id}')" class="button button-primary">设置提醒</button>
                         <button onclick="deleteAsset('${asset.id}')" class="button button-secondary">删除</button>
                     </div>
@@ -796,6 +907,22 @@
             savePriceHistory();
             checkAlerts(asset, price.price);
             loadAssets();
+        }
+
+        async function loadHistoricalData(assetId) {
+            const asset = assets.find(a => a.id === assetId);
+            if (!asset) return;
+
+            showNotification('正在获取历史数据，请稍候...', 'success');
+
+            const success = await fetchAndStoreHistoricalData(asset);
+
+            if (success) {
+                showNotification('历史数据加载成功！概率已更新', 'success');
+                loadAssets();
+            } else {
+                showNotification('获取历史数据失败，请检查网络或稍后重试', 'error');
+            }
         }
 
         function openAlertModal(assetId) {
